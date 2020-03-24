@@ -7,7 +7,6 @@ def train_bigram(train_file, model_file):
     """
     counts = defaultdict(int)  # count the n-gram
     context_counts = defaultdict(int)  # count the context
-    total_count = 0  # to count total words
     with open(train_file) as f:
         for line in f:
             line = line.strip()
@@ -20,11 +19,10 @@ def train_bigram(train_file, model_file):
             for i in range(1, len(words)):  # Note: starting at 1, after <s>
                 # TODO: Write code to count bigrams and their contexts
                 # YOUR CODE HERE
-                counts[words[i - 1]] += 1
-                context_counts[words[i - 1], words[i]] += 1
-                total_count += 1
-                if i == len(words) - 1:
-                    counts[words[i]] += 1
+                counts[words[i - 1] + " " + words[i]] += 1
+                context_counts[words[i - 1]] += 1
+                counts[words[i]] += 1
+                context_counts[""] += 1
 
     # Save probabilities to the model file
     with open(model_file, 'w') as fo:
@@ -39,13 +37,11 @@ def train_bigram(train_file, model_file):
             # ngram<tab>probability
 
             # YOUR CODE HERE
-            probability = count / total_count
+            words = ngram.split(" ")
+            words.pop()
+            context = " ".join(words)
+            probability = counts[ngram] / context_counts[context]
             fo.write('%s\t%f\n' % (ngram, probability))
-            for context, context_count in context_counts.items():
-                if ngram == context[0]:
-                    probability = context_count / count
-                    str_context = ' '.join(context)
-                    fo.write('%s\t%f\n' % (str_context, probability))
 
 
 def load_bigram_model(model_file):
@@ -77,7 +73,7 @@ def load_bigram_model(model_file):
                 w1, w2, p = line.split()
                 w1 = w1.lower()
                 w2 = w2.lower()
-                probs[w1, w2] = float(p)
+                probs[w1 + " " + w2] = float(p)
     return probs
 
 
@@ -102,16 +98,24 @@ def test_bigram(test_file, model_file, lambda2=0.95, lambda1=0.95, N=1000000):
                 p2 = None
 
                 # YOUR CODE HERE
-                if (words[i - 1], words[i]) in probs:
-                    p1 = lambda1 * probs[words[i].lower()] + (1 - lambda1) / N
-                    p2 = lambda2 * probs[words[i - 1].lower(), words[i].lower()] + (1 - lambda2) * p1
-                else:
-                    continue
+                p1 = (1 - lambda1) / N
+                if words[i] in probs:
+                    p1 += lambda1 * probs[words[i].lower()]
+                p2 = (1 - lambda2) * p1
+                if words[i - 1].lower() + " " + words[i].lower() in probs:
+                    p2 += lambda2 * probs[words[i - 1].lower() + " " + words[i].lower()]
                 # END OF YOUR CODE
                 W += 1  # Count the words
                 H += -math.log2(p2)  # We use logarithm to avoid underflow
-        H = H / W
-        P = 2 ** H
-        print("Entropy: {}".format(H))
-        print("Perplexity: {}".format(P))
-        return P
+    H = H / W
+    P = 2 ** H
+    print("Entropy: {}".format(H))
+    print("Perplexity: {}".format(P))
+    return P
+
+
+# train_bigram('02-train-input.txt', '02-train-answer.txt')
+# probs = load_bigram_model('bigram_model.txt')
+# print(probs)
+train_bigram('wiki-en-train.word', 'bigram_model.txt')
+test_bigram('wiki-en-test.word', 'bigram_model.txt')
