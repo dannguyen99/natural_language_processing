@@ -67,12 +67,12 @@ def load_bigram_model(model_file):
             words = line.split()
             if len(words) == 2:
                 w, p = line.split()
-                w = w.lower()
+                # w = w.lower()
                 probs[w] = float(p)
             elif len(words) == 3:
                 w1, w2, p = line.split()
-                w1 = w1.lower()
-                w2 = w2.lower()
+                # w1 = w1.lower()
+                # w2 = w2.lower()
                 probs[w1 + " " + w2] = float(p)
     return probs
 
@@ -100,10 +100,10 @@ def test_bigram(test_file, model_file, lambda2=0.95, lambda1=0.95, N=1000000):
                 # YOUR CODE HERE
                 p1 = (1 - lambda1) / N
                 if words[i] in probs:
-                    p1 += lambda1 * probs[words[i].lower()]
+                    p1 += lambda1 * probs[words[i]]
                 p2 = (1 - lambda2) * p1
-                if words[i - 1].lower() + " " + words[i].lower() in probs:
-                    p2 += lambda2 * probs[words[i - 1].lower() + " " + words[i].lower()]
+                if words[i - 1] + " " + words[i] in probs:
+                    p2 += lambda2 * probs[words[i - 1] + " " + words[i]]
                 # END OF YOUR CODE
                 W += 1  # Count the words
                 H += -math.log2(p2)  # We use logarithm to avoid underflow
